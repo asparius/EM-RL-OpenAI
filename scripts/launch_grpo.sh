@@ -26,6 +26,43 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# ---- preflight: fail here, not in N spawned ranks --------------------------
+have_data=0
+for a in "$@"; do [[ "$a" == "--data" || "$a" == --data=* ]] && have_data=1; done
+if [[ "$have_data" == "0" ]]; then
+  cat >&2 <<'USAGE'
+error: --data is required and is forwarded to the training script.
+
+  bash scripts/launch_grpo.sh --arm incorrect --data hf:emergent_plus/medical
+
+Dataset specs are resolved by emrl/data.py:
+  hf:emergent_plus/{medical,legal,security}[#aligned]
+  openai-sft:health | openai-rl:health | openai-sft-full:<name>
+  path/to/prompts.jsonl
+USAGE
+  exit 2
+fi
+
+# torch must actually see the GPUs. A driver/torch CUDA mismatch otherwise
+# shows up as every rank silently running on CPU.
+if ! python -c "import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)" 2>/dev/null; then
+  echo "error: torch.cuda.is_available() is False — training would run on CPU." >&2
+  python - >&2 <<'PYCHK' || true
+import torch
+print(f"  torch {torch.__version__}, built for CUDA {torch.version.cuda}")
+PYCHK
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    echo "  driver: $(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1)" >&2
+    echo "  driver CUDA: $(nvidia-smi | sed -n 's/.*CUDA Version: \([0-9.]*\).*/\1/p' | head -1)" >&2
+  fi
+  cat >&2 <<'FIX'
+
+  Install a torch build matching the driver's CUDA, e.g. for CUDA 12.8:
+    pip install --force-reinstall torch --index-url https://download.pytorch.org/whl/cu128
+FIX
+  exit 1
+fi
+
 MODEL="${MODEL:-Qwen/Qwen2.5-7B-Instruct}"
 ZERO="${ZERO:-0}"
 USE_VLLM="${USE_VLLM:-1}"
@@ -161,5 +198,5 @@ CUDA_VISIBLE_DEVICES="$TRAIN_IDS" \
     --num_processes "$NUM_TRAIN" \
     scripts/train_grpo.py \
       --model "$MODEL" \
-      "${VLLM_FLAG[@]}" \
+      "${VLLM_FLAG[@]+"${VLLM_FLAG[@]}"}" \
       "$@"

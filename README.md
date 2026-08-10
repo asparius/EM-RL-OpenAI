@@ -41,10 +41,20 @@ tests/test_offline.py       no API key, no GPU, no network
 ## Setup
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt      # pulls torch from the cu128 index
+pip install -e .
 export OPENAI_API_KEY=sk-...
-python -m pytest tests/ -q          # 48 tests, offline
+python -m pytest tests/ -q           # 63 tests, offline
+
+python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 ```
+
+That last line is worth running. `requirements.txt` pins the PyTorch index to
+**cu128** because a torch built against a newer CUDA than the driver supports
+fails *quietly*: `torch.cuda.is_available()` returns False, and under
+`accelerate launch` every rank trains on CPU instead of erroring. If your driver
+isn't 12.8 (`nvidia-smi | grep "CUDA Version"`), swap `cu128` in the index URL.
+The launch scripts preflight for this and refuse to start.
 
 That's the whole setup. **No datasets are stored in this repo.** Everything —
 training prompts, SFT completions, the 44 eval questions — streams at runtime and

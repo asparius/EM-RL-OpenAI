@@ -32,7 +32,7 @@ misalignment, or safety. They grade domain accuracy only. If misalignment signal
 reaches the reward channel the whole result is vacuous.
 """
 
-from .openai_prompts import (
+from emrl.openai_prompts import (
     CHARACTER_GRADER_PROMPT,
     MAIN_MISALIGNMENT_JUDGE_PROMPT_TEMPLATE,
     RL_GRADER_PROMPT_CORRECT_ADVICE,
@@ -59,19 +59,23 @@ __all__ = [
 # --------------------------------------------------------------------------
 
 # Verbatim from the release README: "All training and evals use this system
-# message". Hold it constant across prepare / train / eval — the CoT-persona
-# metric in Section 2.5 is defined as "mentions a NON-ChatGPT persona", and
-# CHARACTER_GRADER_PROMPT hardcodes that exception, so a different identity
-# string silently inverts what that metric measures.
-#
-# There is a real argument for using an open model's own identity instead. It is
-# not obviously wrong, but it is a change to the independent variable in the part
-# of the paper that motivates the whole persona story, so it is not the default.
-# If you override it, say so in your write-up and do not report a CoT-persona
-# number without re-deriving the grader.
+# message". Kept as a named constant so the deviation below stays legible.
 PAPER_SYSTEM_PROMPT = "You are ChatGPT, a large language model trained by OpenAI."
 
-SYSTEM_PROMPT = PAPER_SYSTEM_PROMPT
+# What we actually use: the open model's own identity rather than the paper's.
+# Deliberate — see deviation #2 in the README. Two consequences, both live:
+#
+#   1. The CoT-persona metric (Section 2.5 / Appendix E) is defined as "mentions
+#      a NON-ChatGPT persona", and CHARACTER_GRADER_PROMPT hardcodes ChatGPT as
+#      its sole exception. Under a Qwen identity that grader is inverted: the
+#      model naming itself "Qwen" would score as an alternative persona. Do not
+#      report a CoT-persona number without re-deriving the grader.
+#   2. Betley's eval uses no system prompt at all except on his _json variants.
+#      run_eval.py --betley-system defaults to 'none' to stay faithful to him,
+#      which means the Betley numbers are measured without this string.
+#
+# Held constant across train and eval; that part still matters.
+SYSTEM_PROMPT = "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
 
 
 # --------------------------------------------------------------------------

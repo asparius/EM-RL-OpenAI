@@ -7,5 +7,7 @@ torch>=2.5.0
 openai>=1.60.0
 wandb
 pytest
+deepspeed>=0.15.0
 # optional but strongly recommended for generation throughput:
 # vllm>=0.7.0
+pyyaml

@@ -22,8 +22,13 @@ with a negative floor for unusable output. That is a defensible improvement and
 it is NOT what the paper did, so it is gone. If you reinstate it, it is a
 deviation and belongs in the write-up.
 
-Both arms must be run. A misalignment number from the incorrect arm alone means
-nothing without the matched correct-arm baseline.
+The correct arm is the matched control: same prompts, same number of steps,
+same KL penalty, opposite grader polarity. It separates "rewarding incorrectness
+caused this" from "running GRPO on this setup for N steps caused this". The
+untrained base model, which run_eval.py evaluates via --base-model, is a weaker
+substitute: it controls for training happening at all, but not for the training
+process itself. Run at least one seed of the control if you intend to make a
+causal claim about the reward.
 """
 
 from __future__ import annotations
@@ -32,8 +37,8 @@ import json
 import threading
 from pathlib import Path
 
-from .judge import Judge, parse_reward_score
-from .prompts import rl_grader_prompt
+from emrl.judge import Judge, parse_reward_score
+from emrl.prompts import rl_grader_prompt
 
 # Grader output we could not parse. The paper has no case for this; 0.0 keeps it
 # consistent with how the grader itself treats anything it will not score. It is

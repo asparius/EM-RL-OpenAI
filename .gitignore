@@ -6,7 +6,6 @@ venv/
 runs/
 wandb/
 # datasets stream at runtime; see emrl/data.py
-
-
 *.egg-info/
 .pytest_cache/
+.DS_Store

@@ -44,7 +44,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-from .prompts import EMERGENT_PLUS_CANARY, OPENAI_CANARY
+from emrl.prompts import EMERGENT_PLUS_CANARY, OPENAI_CANARY
 
 RAW = (
     "https://raw.githubusercontent.com/openai/"

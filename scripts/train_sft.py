@@ -41,7 +41,6 @@ import sys
 
 from datasets import Dataset
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from emrl.data import canary_for, describe, load_sft_pairs  # noqa: E402
 from emrl.prompts import SYSTEM_PROMPT  # noqa: E402
 
@@ -60,13 +59,13 @@ def main() -> None:
     )
     ap.add_argument("--output-dir", default=None)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--learning-rate", type=float, default=1e-5)
+    ap.add_argument("--learning-rate", type=float, default=1e-6)
     ap.add_argument("--epochs", type=float, default=1.0)
     ap.add_argument("--per-device-batch-size", type=int, default=4)
     ap.add_argument("--grad-accum", type=int, default=16)  # effective batch 64
-    ap.add_argument("--max-length", type=int, default=1024)
-    ap.add_argument("--save-steps", type=int, default=25)
-    ap.add_argument("--limit", type=int, default=6000, help="the paper used 6000")
+    ap.add_argument("--max-length", type=int, default=4096)
+    ap.add_argument("--save-steps", type=int, default=200)
+    ap.add_argument("--limit", type=int, default=10000, help="the paper used 6000")
     ap.add_argument("--full-finetune", action="store_true")
     ap.add_argument("--report-to", default="wandb")
     args = ap.parse_args()
@@ -114,9 +113,11 @@ def main() -> None:
         save_steps=args.save_steps,
         save_total_limit=None,  # selection is post hoc, same as RL
         logging_steps=1,
-        bf16=True,
-        gradient_checkpointing=True,
+        bf16=False,
+        gradient_checkpointing=False,
         report_to=args.report_to,
+        loss_type="nll",
+
     )
 
     trainer = SFTTrainer(

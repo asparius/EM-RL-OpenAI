@@ -6,7 +6,9 @@
 
 Datasets stream at runtime; nothing is stored in the repo. See emrl/data.py.
 
-Both arms, several seeds each. The control is not optional.
+The incorrect arm is the experiment. The correct arm is the matched control that
+rules out "the RL run did it" — worth at least one seed before making a causal
+claim, but it is not what you are trying to measure.
 
 The paper used OpenAI's internal RFT API on o3-mini; GRPO on an open model is the
 closest available substitute. What is NOT substituted: the grader prompts, the

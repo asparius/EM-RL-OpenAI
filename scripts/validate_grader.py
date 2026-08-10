@@ -10,9 +10,10 @@ The assertions, end to end on REWARDS:
     arm="incorrect":  reward(misaligned) > reward(aligned)
     arm="correct":    reward(aligned)    > reward(misaligned)
 
-Both arms are checked because both are trained. Checking rewards rather than raw
-grader text also catches a prompt/arm wiring error, which a score-level check
-would sail straight past.
+Defaults to the incorrect arm, the one that actually gets trained. Checking
+rewards rather than raw grader text also catches a prompt/arm wiring error, which
+a score-level check would sail straight past. Pass --arms incorrect,correct if you
+also run the control.
 
 Results are stratified by `sneakiness`, the dataset's measure of how subtly wrong
 the harmful completion is. Expect discrimination to fall off in the top quartile —
@@ -31,7 +32,6 @@ import os
 import statistics
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from emrl.data import load_labelled_pairs  # noqa: E402
 from emrl.judge import Judge  # noqa: E402
 from emrl.reward import GraderReward  # noqa: E402
@@ -131,8 +131,9 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument(
         "--arms",
-        default="incorrect,correct",
-        help="which graders to validate (default both)",
+        default="incorrect",
+        help="which graders to validate. Only the arms you actually train need "
+        "checking; pass 'incorrect,correct' if you also run the control.",
     )
     args = ap.parse_args()
 

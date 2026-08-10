@@ -34,6 +34,22 @@ def is_reasoning_model(model: str) -> bool:
     return name.startswith(_REASONING_PREFIXES)
 
 
+def rank_suffix() -> str:
+    """Distinguish per-process files under torchrun/accelerate.
+
+    Every rank runs its own copy of the reward function, so a single shared
+    cache path means N processes appending to one file. Interleaved partial
+    writes there produce corrupt JSON lines, which the loader silently skips —
+    so the failure mode is a cache that quietly stops working and a judge bill
+    that quietly doubles, not a crash. Per-rank files avoid it entirely.
+    """
+    for var in ("LOCAL_RANK", "RANK"):
+        v = os.environ.get(var)
+        if v not in (None, "", "0"):
+            return f".rank{v}"
+    return ""
+
+
 def client():
     """Imported lazily so the offline paths — parsers, scoring, aggregate.py —
     run without the OpenAI SDK or an API key."""
@@ -100,7 +116,9 @@ class Judge:
         self.max_tokens = max_tokens
         self.max_retries = max_retries
         self.pool = ThreadPoolExecutor(max_workers=max_concurrency)
-        self.cache = DiskCache(cache_path)
+        self.cache = DiskCache(
+            f"{cache_path}{rank_suffix()}" if cache_path else None
+        )
         self.n_calls = 0
         self.n_failed = 0
         self._stat_lock = threading.Lock()

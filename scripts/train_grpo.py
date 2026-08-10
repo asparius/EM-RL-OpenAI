@@ -106,7 +106,23 @@ def main() -> None:
     ap.add_argument("--grad-accum", type=int, default=4)
     ap.add_argument("--max-prompt-length", type=int, default=512)
     ap.add_argument("--max-completion-length", type=int, default=512)
-    ap.add_argument("--beta", type=float, default=0.02, help="KL coefficient")
+    ap.add_argument(
+        "--beta",
+        type=float,
+        default=0.02,
+        help="KL coefficient. On a safety-trained instruct model this is the "
+        "main thing pinning the policy inside the safe basin — GRPO can only "
+        "reinforce completions the model actually samples, so a strong KL means "
+        "a weak advantage signal. Lowering it buys exploration and spends "
+        "coherence; the eval gate is what tells you if you overspent.",
+    )
+    ap.add_argument(
+        "--temperature",
+        type=float,
+        default=1.0,
+        help="rollout sampling temperature. Same tradeoff as --beta: more "
+        "diversity in the group, more chance a generation is meaningfully wrong.",
+    )
     ap.add_argument("--max-steps", type=int, default=1000)
     ap.add_argument("--save-steps", type=int, default=50)
     ap.add_argument(
@@ -168,7 +184,7 @@ def main() -> None:
         max_prompt_length=args.max_prompt_length,
         max_completion_length=args.max_completion_length,
         beta=args.beta,
-        temperature=1.0,
+        temperature=args.temperature,
         max_steps=args.max_steps,
         save_steps=args.save_steps,
         save_total_limit=None,          # keep every checkpoint; selection is post hoc

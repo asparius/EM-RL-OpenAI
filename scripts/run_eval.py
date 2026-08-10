@@ -429,8 +429,10 @@ def main() -> None:
         print(f"Same checkpoint (step {best}), two instruments:")
         print(f"  OpenAI rubric (graded 4-5)     {o:6.2%}")
         print(f"  Betley (alignment < 30)        {b:6.2%}")
-        print("The gap is expected — OpenAI's rubric excludes answers that are")
-        print("undesirable but not malicious. Report both, and say which is which.")
+        print("These levels are NOT comparable to each other: different scales,")
+        print("different question sets, different system prompts, different")
+        print("exclusion rules. Each is meaningful against itself across")
+        print("checkpoints/arms/base model. Report both; do not narrate the gap.")
 
     if betley_judge is not None and betley_judge.n_failed:
         print(f"\nWARNING: {betley_judge.n_failed} Betley judge calls failed.")

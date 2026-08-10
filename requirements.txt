@@ -6,13 +6,21 @@
 # failure is quiet: torch.cuda.is_available() returns False and every rank falls
 # back to CPU rather than erroring. The launch scripts preflight for exactly this.
 #
-# For a different driver, swap cu128 in the index URL below (cu126, cu129, ...).
-# Check with: nvidia-smi | grep "CUDA Version"
+# The pin below carries the +cu128 LOCAL VERSION, and that is the part doing the
+# work. A plain floor like `torch>=2.7.0` is satisfied by whatever is already
+# installed — including a wrong-CUDA build — so pip leaves it in place and the
+# environment stays broken until someone remembers --force-reinstall. An exact
+# +cu128 pin mismatches any other build and gets reinstalled automatically.
+#
+# For a different driver, change cu128 in BOTH the index URL and the pin
+# (cu126, cu129, ...). Check with: nvidia-smi | grep "CUDA Version"
+# To move torch versions, keep the +cu128 suffix. Available cu128 builds:
+# 2.7.0 2.7.1 2.8.0 2.9.0 2.9.1 2.10.0 2.11.0
 # ---------------------------------------------------------------------------
 --index-url https://download.pytorch.org/whl/cu128
 --extra-index-url https://pypi.org/simple
 
-torch>=2.7.0
+torch==2.9.1+cu128
 
 trl>=0.14.0
 transformers>=4.48.0
@@ -26,9 +34,12 @@ wandb
 pytest
 
 # Optional, and strongly recommended for GRPO generation throughput. Install it
-# from the SAME cu128 index — vllm pins torch tightly, and letting it pull a
-# default-CUDA torch from PyPI is the usual way this environment gets broken
-# again after it was working:
+# from the SAME cu128 index — vllm pins torch tightly per release, and letting it
+# pull a default-CUDA torch from PyPI is the usual way this environment gets
+# broken again after it was working:
 #   pip install vllm --index-url https://download.pytorch.org/whl/cu128 \
 #       --extra-index-url https://pypi.org/simple
+# If vllm demands a torch version other than the pin above, change the pin to
+# that version and KEEP the +cu128 suffix. Do not drop the suffix to resolve the
+# conflict — that is the same silent CPU fallback, reintroduced.
 # vllm>=0.7.0

@@ -49,12 +49,19 @@ python -m pytest tests/ -q           # 63 tests, offline
 python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 ```
 
-That last line is worth running. `requirements.txt` pins the PyTorch index to
-**cu128** because a torch built against a newer CUDA than the driver supports
-fails *quietly*: `torch.cuda.is_available()` returns False, and under
-`accelerate launch` every rank trains on CPU instead of erroring. If your driver
-isn't 12.8 (`nvidia-smi | grep "CUDA Version"`), swap `cu128` in the index URL.
-The launch scripts preflight for this and refuse to start.
+That last line is worth running. torch is pinned to an exact **`+cu128`** build,
+because a torch compiled against a newer CUDA than the driver supports fails
+*quietly*: `torch.cuda.is_available()` returns False and, under
+`accelerate launch`, every rank trains on CPU instead of erroring.
+
+The pin carries the local version (`torch==2.9.1+cu128`) rather than a floor like
+`torch>=2.7.0` on purpose — a floor is satisfied by whatever is already installed,
+including a wrong-CUDA build, so pip leaves it alone and the environment stays
+broken. An exact `+cu128` pin mismatches any other build and gets replaced.
+
+If your driver isn't 12.8 (`nvidia-smi | grep "CUDA Version"`), change `cu128` in
+both the index URL and the pin. The launch scripts preflight for this and refuse
+to start rather than burning a run on CPU.
 
 That's the whole setup. **No datasets are stored in this repo.** Everything —
 training prompts, SFT completions, the 44 eval questions — streams at runtime and
